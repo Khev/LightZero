@@ -18,6 +18,7 @@ from utils_env import *
 from ding.envs import BaseEnv, BaseEnvTimestep
 from ding.utils import ENV_REGISTRY
 from easydict import EasyDict
+from colorama import Fore, Style
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,11 @@ class multiEqnEasy(BaseEnv):
             self.action_cache = {}  # Cache for dynamic actions
 
         # Set up the equation and symbols
-        self.train_eqns = ['a*x','b*x', 'x+a','x+b','a*x+b','b*x+a','a*x+a','b*x+b']
+        self.train_eqns = ['a*x','b*x',
+                     'x+a','x+b',
+                     'a*x+b','b*x+a','a*x+a','b*x+b', 
+                     'a/x+b','b/x+a','a/x+a','b/x+b'
+                     ]
         self.train_eqns = [sympify(m) for m in self.train_eqns]
         self.solve_counts = defaultdict(int)
         self.main_eqn = np.random.choice(self.train_eqns)
@@ -114,9 +119,9 @@ class multiEqnEasy(BaseEnv):
         # Build feature dictionary (e.g., {'add': -1, 'x': 1, 'a':2, ...})
         self.feature_dict = make_feature_dict(self.main_eqn, self.state_rep)
 
-        a, b = symbols('a b')
+        a, b, x = symbols('a b x')
         operations = [add, sub, mul, truediv]
-        terms = [a, b]
+        terms = [a, b, x]
         self.actions_fixed = []
         self.actions = list(product(operations, terms))
         self.action_mask = [True for i in self.actions]
@@ -163,13 +168,12 @@ class multiEqnEasy(BaseEnv):
 
         verbose = True
         if verbose:
-            print(f'\nStep: {self.current_steps}: Main eqn = {self.main_eqn}')
-            print(f'\n {lhs_new} = {rhs_new}')
-            print(f'(Operation, term): {operation_names.get(operation, operation)}, {term} | reward = {reward:.2f}\n')
+            #print(f'\nStep: {self.current_steps}: Main eqn = {self.main_eqn} \n {lhs_new} = {rhs_new} ')
+            #print(f'(Operation, term): {operation_names.get(operation, operation)}, {term} | reward = {reward:.2f}\n')
 
             if is_solved:
                 self.solve_counts[self.main_eqn] += 1
-                print(f'\nSOLVED: {self.lhs} = {self.rhs}\n')
+                print(Fore.GREEN + f'\nSOLVED: {self.lhs} = {self.rhs}\n' + Style.RESET_ALL)
                 print(self.solve_counts)
 
         lightzero_obs_dict = {
