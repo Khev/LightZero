@@ -22,7 +22,7 @@ reanalyze_ratio = 0
 # ==============================================================
 
 single_eqn_muzero_config = dict(
-    exp_name=f'data_muzero/x+b_action-space-4',
+    exp_name=f'data_muzero/a*x+b_action-space-4',
     env=dict(
         env_name='singleEqnEasy_env',  # Changed from LunarLander-v2
         max_steps=max_steps,
@@ -36,7 +36,7 @@ single_eqn_muzero_config = dict(
     policy=dict(
         model=dict(
             observation_shape=41,  
-            action_space_size=4, 
+            action_space_size=8, 
             model_type='mlp',
             latent_state_dim=128,
             self_supervised_learning_loss=True,

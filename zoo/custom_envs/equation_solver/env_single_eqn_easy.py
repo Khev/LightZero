@@ -40,7 +40,7 @@ class singleEqnEasy(BaseEnv):
 
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, env_fn=None, cfg=None, main_eqn='x+b', state_rep='integer_1d', normalize_rewards=True, cache=False, \
+    def __init__(self, env_fn=None, cfg=None, main_eqn='a*x+b', state_rep='integer_1d', normalize_rewards=True, cache=False, \
         verbose=False):
         #super().__init__(env_fn, cfg)
         self.cfg = EasyDict(cfg or self.config)
@@ -50,7 +50,7 @@ class singleEqnEasy(BaseEnv):
         # Parameters from configuration
         self.max_expr_length = 20
         self.max_steps = self.cfg.max_steps
-        self.action_dim = 4
+        self.action_dim = 8
         self.observation_dim = 2 * self.max_expr_length + 1
 
         # Reward settings
@@ -110,7 +110,7 @@ class singleEqnEasy(BaseEnv):
 
         a, b = symbols('a b')
         operations = [add, sub, mul, truediv]
-        terms = [b]
+        terms = [a, b]
         self.actions_fixed = []
         self.actions = list(product(operations, terms))
         self.action_mask = [True for i in self.actions]

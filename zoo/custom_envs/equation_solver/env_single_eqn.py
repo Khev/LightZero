@@ -16,6 +16,7 @@ from utils_env import *
 from ding.envs import BaseEnv, BaseEnvTimestep
 from ding.utils import ENV_REGISTRY
 from easydict import EasyDict
+from colorama import Fore, Style
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class singleEqn(BaseEnv):
 
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, env_fn=None, cfg=None, main_eqn='x+b', state_rep='integer_1d', normalize_rewards=True, cache=False, \
+    def __init__(self, env_fn=None, cfg=None, main_eqn='a*x+b', state_rep='integer_1d', normalize_rewards=True, cache=False, \
         verbose=False):
         #super().__init__(env_fn, cfg)
         self.cfg = EasyDict(cfg or self.config)
@@ -68,7 +69,7 @@ class singleEqn(BaseEnv):
             self.action_cache = {}  # Cache for dynamic actions
 
         # Set up the equation and symbols
-        self.main_eqn = sympify(main_eqn)
+        self.main_eqn = sympify(self.cfg['main_eqn'])
         self.lhs = self.main_eqn
         self.rhs = 0
         self.x = symbols('x')
@@ -112,12 +113,12 @@ class singleEqn(BaseEnv):
         self.actions_fixed = [
             # (custom_expand, None),
             # (custom_factor, None),
-            # (custom_collect, self.x), 
+            (custom_collect, self.x), 
             # (custom_together, None),
             # (custom_ratsimp, None),
             # (custom_square, None),
             # (custom_sqrt, None),
-            (mul, -1)
+            # (mul, -1)
         ]
         # Generate dynamic actions based on the current equation
         if self.cache:
@@ -153,20 +154,18 @@ class singleEqn(BaseEnv):
 
         # Compute reward based on equation complexity changes
         reward = self.find_reward(lhs_old, rhs_old, lhs_new, rhs_new, is_valid_eqn, is_solved)
+        if reward == 0:
+            reward = -0.2
         self.episode_return += reward
 
-        # Temp: remove soon.
-        if term == -1 and not is_solved:
-            reward = 0
-
         # Termination conditions: solved, exceeded max steps, or invalid equation
+        self.current_steps += 1
         too_many_steps = self.current_steps >= self.max_steps
         done = bool(is_solved or too_many_steps or not is_valid_eqn)
         truncated = False
 
         # Update state and step counter
         self.lhs, self.rhs, self.obs = lhs_new, rhs_new, np.array(obs_new, dtype=np.float32)
-        self.current_steps += 1
 
         # Update actions
         self.actions, self.action_mask  = make_actions(lhs_new, rhs_new, self.actions_fixed, self.action_dim)
@@ -183,13 +182,12 @@ class singleEqn(BaseEnv):
 
         verbose = True
         if verbose:
-            #print(f'{self.lhs} = {self.rhs}. (Operation, term): {operation_names.get(operation, operation)}, {term} | reward = {reward:.2f}')
-            print(f'(Operation, term): {operation_names.get(operation, operation)}, {term} | reward = {reward:.2f}')
-            if operation_names.get(operation, operation) == 'multiply' and reward > 0:
-                print(f'\n\n{lhs_old} = {rhs_old} => {lhs_new} = {rhs_new}\n\n' )
-
+            print(f'Main_eqn: {self.main_eqn}')
+            print(f'Step: {self.current_steps}')
+            print(f'{lhs_old} = {rhs_old}')
+            print(f'(Operation, term): {operation_names.get(operation, operation)}, {term} | reward = {reward:.2f} \n')
             if is_solved:
-                print(f'\nSOLVED: {self.lhs} = {self.rhs}\n')
+                print(Fore.GREEN + f'\nSOLVED: {self.lhs} = {self.rhs}\n' + Style.RESET_ALL)
 
         lightzero_obs_dict = {
             'observation': np.array(obs_new, dtype=np.float32),

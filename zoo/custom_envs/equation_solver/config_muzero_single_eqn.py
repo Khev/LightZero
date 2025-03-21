@@ -14,20 +14,22 @@ collector_env_num = 8
 n_episode = 8
 evaluator_env_num = 3
 num_simulations = 25
-max_steps = 20
+max_steps = 5  #was 20
 replay_ratio = 0.25
-update_per_collect = int(collector_env_num*max_steps*replay_ratio)
+update_per_collect = int(collector_env_num*max_steps*replay_ratio*4)
 batch_size = 128
 max_env_step = int(1e5)
 reanalyze_ratio = 0
+main_eqn = 'a*x+b'
 # ==============================================================
 # end of the most frequently changed config specified by the user
 # ==============================================================
 
 single_eqn_muzero_config = dict(
-    exp_name=f'data_muzero/x+b_action-space-50',
+    exp_name=f'data_muzero/main_env/{main_eqn}/',
     env=dict(
         env_name='singleEqn_env',  # Changed from LunarLander-v2
+        main_eqn=main_eqn,
         max_steps=max_steps,
         continuous=False,
         manually_discretization=False,
@@ -88,5 +90,39 @@ single_eqn_muzero_create_config = EasyDict(single_eqn_muzero_create_config)
 create_config = single_eqn_muzero_create_config
 
 if __name__ == "__main__":
+    from colorama import Fore, Style
+    
     seed = 14850
-    train_muzero([main_config, create_config], seed=seed, model_path=main_config.policy.model_path, max_env_step=max_env_step)
+    eqn_list = ["a*x", "x+b", "a*x+b", "a/x+b", 'c*(a*x+b)+d', 'd/(a*x+b)+c', 'e*(a*x+b)+(c*x+d)','(a*x+b)/(c*x+d)+e' ]
+    eqn_list = ["a*x", "x+b", "a*x+b", "a/x+b", 'c*(a*x+b)+d'][2:]
+
+    results = []  # Store results here
+    for eqn in eqn_list:
+        print(f"Running MuZero training for equation: {eqn}")
+
+        # Update the main equation dynamically
+        main_config.env.main_eqn = eqn
+        main_config.exp_name = f'data_muzero/main_env/{eqn}/'
+
+        # Run MuZero training and collect rewards
+        policy, reward_test = train_muzero(
+            [main_config, create_config], 
+            seed=seed, 
+            model_path=main_config.policy.model_path, 
+            max_env_step=max_env_step
+        )
+
+        # Store results
+        print(Fore.GREEN + f"Equation: {eqn} | Test Reward: {reward_test:.2f}" + Style.RESET_ALL)
+        results.append((eqn, reward_test))
+
+        print(f"Finished training for equation: {eqn}\n")
+
+    # ============================
+    # Print all results at the end
+    # ============================
+    print(Fore.GREEN + "\nFINAL RESULTS:" + Style.RESET_ALL)
+    for eqn, reward_test in results:
+        print(f"Equation: {eqn} | Test Reward: {reward_test:.2f}")
+
+
