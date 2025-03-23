@@ -15,7 +15,7 @@ max_steps = 5
 replay_ratio = 0.25
 update_per_collect = int(collector_env_num*max_steps*replay_ratio)
 batch_size = 128
-max_env_step = int(1e5)
+max_env_step = int(5*1e6)
 reanalyze_ratio = 0
 # ==============================================================
 # end of the most frequently changed config specified by the user
@@ -36,9 +36,9 @@ multi_eqn_muzero_config = dict(
     policy=dict(
         model=dict(
             observation_shape=41,  
-            action_space_size=12, 
+            action_space_size=20, 
             model_type='mlp',
-            latent_state_dim=128,
+            latent_state_dim=512,
             self_supervised_learning_loss=True,
             discrete_action_encoding_type='not_one_hot',
             res_connection_in_dynamics=True,

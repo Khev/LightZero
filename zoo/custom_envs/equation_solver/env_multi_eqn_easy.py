@@ -53,7 +53,7 @@ class multiEqnEasy(BaseEnv):
         # Parameters from configuration
         self.max_expr_length = 20
         self.max_steps = self.cfg.max_steps
-        self.action_dim = 8
+        self.action_dim = 20
         self.observation_dim = 2 * self.max_expr_length + 1
 
         # Reward settings
@@ -71,13 +71,14 @@ class multiEqnEasy(BaseEnv):
             self.action_cache = {}  # Cache for dynamic actions
 
         # Set up the equation and symbols
-        self.train_eqns = ['a*x','b*x',
-                     'x+a','x+b',
-                     'a*x+b','b*x+a','a*x+a','b*x+b', 
-                     'a/x+b','b/x+a','a/x+a','b/x+b'
+        self.train_eqns = ['a*x','b*x','c*x','d*x',
+                     'x+a','x+b','x+c','x+d',
+                     'a*x+b','b*x+a','a*x+a','b*x+b', 'c*x+d', 'd*x+c',
+                    #  'a/x+b','b/x+a','a/x+a','b/x+b',
+                     'c*(a*x+b)+d', 'd*(a*x+b)+c', 'c*(b*x+a)+d', 'd*(b*x+a)+c'
                      ]
         self.train_eqns = [sympify(m) for m in self.train_eqns]
-        self.solve_counts = defaultdict(int)
+        self.solve_counts = {eqn:0 for eqn in self.train_eqns}
         self.main_eqn = np.random.choice(self.train_eqns)
 
         self.lhs = self.main_eqn
@@ -119,9 +120,9 @@ class multiEqnEasy(BaseEnv):
         # Build feature dictionary (e.g., {'add': -1, 'x': 1, 'a':2, ...})
         self.feature_dict = make_feature_dict(self.main_eqn, self.state_rep)
 
-        a, b, x = symbols('a b x')
+        a, b, c, d, x = symbols('a b c d x')
         operations = [add, sub, mul, truediv]
-        terms = [a, b, x]
+        terms = [a, b, c, d, x]
         self.actions_fixed = []
         self.actions = list(product(operations, terms))
         self.action_mask = [True for i in self.actions]
@@ -174,7 +175,8 @@ class multiEqnEasy(BaseEnv):
             if is_solved:
                 self.solve_counts[self.main_eqn] += 1
                 print(Fore.GREEN + f'\nSOLVED: {self.lhs} = {self.rhs}\n' + Style.RESET_ALL)
-                print(self.solve_counts)
+                for eqn, count in self.solve_counts.items():
+                    print(f'{eqn}: {count}')
 
         lightzero_obs_dict = {
             'observation': np.array(obs_new, dtype=np.float32),
@@ -189,6 +191,9 @@ class multiEqnEasy(BaseEnv):
         # You can optionally capture start_player_index if needed:
         start_player_index = kwargs.get('start_player_index', 0)
         # Then proceed with the reset
+        solve_counts_temp = np.array([self.solve_counts[eqn] for eqn in self.train_eqns], dtype=np.float32)
+        probs = 1.0 / (solve_counts_temp + 1e-6)  # avoid division by zero
+        probs /= probs.sum()  # normalize to sum to 1
         self.main_eqn = np.random.choice(self.train_eqns)
         self.current_steps = 0
         self.lhs, self.rhs = self.main_eqn, 0
