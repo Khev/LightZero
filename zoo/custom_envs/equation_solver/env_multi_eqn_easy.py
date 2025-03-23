@@ -79,6 +79,7 @@ class multiEqnEasy(BaseEnv):
                      ]
         self.train_eqns = [sympify(m) for m in self.train_eqns]
         self.solve_counts = {eqn:0 for eqn in self.train_eqns}
+        self.visit_counts = {eqn:0 for eqn in self.train_eqns}
         self.main_eqn = np.random.choice(self.train_eqns)
 
         self.lhs = self.main_eqn
@@ -176,7 +177,7 @@ class multiEqnEasy(BaseEnv):
                 self.solve_counts[self.main_eqn] += 1
                 print(Fore.GREEN + f'\nSOLVED: {self.lhs} = {self.rhs}\n' + Style.RESET_ALL)
                 for eqn, count in self.solve_counts.items():
-                    print(f'{eqn}: {count}')
+                    print(f'{eqn}: visit = {self.visit_counts[eqn]}, solved: {count}')
 
         lightzero_obs_dict = {
             'observation': np.array(obs_new, dtype=np.float32),
@@ -192,9 +193,11 @@ class multiEqnEasy(BaseEnv):
         start_player_index = kwargs.get('start_player_index', 0)
         # Then proceed with the reset
         solve_counts_temp = np.array([self.solve_counts[eqn] for eqn in self.train_eqns], dtype=np.float32)
-        probs = 1.0 / (solve_counts_temp + 1e-6)  # avoid division by zero
+        probs = 1.0 / (1 + solve_counts_temp)  # avoid division by zero
         probs /= probs.sum()  # normalize to sum to 1
-        self.main_eqn = np.random.choice(self.train_eqns)
+        eqn = np.random.choice(self.train_eqns, p=probs)
+        self.visit_counts[eqn] += 1        
+        self.main_eqn = eqn
         self.current_steps = 0
         self.lhs, self.rhs = self.main_eqn, 0
         #self.actions, self.action_mask  = make_actions(self.lhs, self.rhs, self.actions_fixed, self.action_dim)
