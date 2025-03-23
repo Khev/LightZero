@@ -237,4 +237,15 @@ def train_muzero(
     # Learner's after_run hook.
     learner.call_hook('after_run')
     wandb.finish()
-    return policy
+
+    # KEV: added this 
+    final_test_reward_mean = reward.get('eval_episode_return_mean', 0)
+
+    # Learner's after_run hook.
+    learner.call_hook('after_run')
+    wandb.finish()
+
+    # Kev: added this
+    return policy, final_test_reward_mean  # Return rewards
+
+    #return policy
