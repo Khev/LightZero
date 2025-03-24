@@ -38,12 +38,15 @@ multi_eqn_muzero_config = dict(
             observation_shape=41,  
             action_space_size=20, 
             model_type='mlp',
+            hidden_size_list=[512,512,512],
             latent_state_dim=512,
             self_supervised_learning_loss=True,
             discrete_action_encoding_type='not_one_hot',
             res_connection_in_dynamics=True,
             norm_type='LN',
         ),
+        root_dirichlet_alpha=0.3,       # e.g., 0.3
+        root_exploration_fraction=0.25, # e.g., 0.25
         td_steps=5,
         num_unroll_steps=5,
         model_path=None,
