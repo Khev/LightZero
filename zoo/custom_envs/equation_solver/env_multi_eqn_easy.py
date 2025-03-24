@@ -53,7 +53,7 @@ class multiEqnEasy(BaseEnv):
         # Parameters from configuration
         self.max_expr_length = 20
         self.max_steps = self.cfg.max_steps
-        self.action_dim = 20
+        self.action_dim = 16
         self.observation_dim = 2 * self.max_expr_length + 1
 
         # Reward settings
@@ -123,7 +123,7 @@ class multiEqnEasy(BaseEnv):
 
         a, b, c, d, x = symbols('a b c d x')
         operations = [add, sub, mul, truediv]
-        terms = [a, b, c, d, x]
+        terms = [a, b, c, d]
         self.actions_fixed = []
         self.actions = list(product(operations, terms))
         self.action_mask = [True for i in self.actions]
@@ -171,7 +171,7 @@ class multiEqnEasy(BaseEnv):
         verbose = True
         if verbose:
             #print(f'\nStep: {self.current_steps}: Main eqn = {self.main_eqn} \n {lhs_new} = {rhs_new} ')
-            #print(f'(Operation, term): {operation_names.get(operation, operation)}, {term} | reward = {reward:.2f}\n')
+            print(f'Main eqn = {self.main_eqn} | {lhs_new} = {rhs_new} \n (Operation, term): {operation_names.get(operation, operation)}, {term} | reward = {reward:.2f}\n')
 
             if is_solved:
                 self.solve_counts[self.main_eqn] += 1
