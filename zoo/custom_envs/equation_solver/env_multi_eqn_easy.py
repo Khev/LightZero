@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import logging
 import numpy as np
-from sympy import sympify, symbols
+from sympy import sympify, symbols, expand
 from gymnasium import spaces
 from operator import add, sub, mul, truediv
 
@@ -53,7 +53,7 @@ class multiEqnEasy(BaseEnv):
         # Parameters from configuration
         self.max_expr_length = 20
         self.max_steps = self.cfg.max_steps
-        self.action_dim = 16
+        self.action_dim = 21
         self.observation_dim = 2 * self.max_expr_length + 1
 
         # Reward settings
@@ -71,12 +71,14 @@ class multiEqnEasy(BaseEnv):
             self.action_cache = {}  # Cache for dynamic actions
 
         # Set up the equation and symbols
-        self.train_eqns = ['a*x','b*x','c*x','d*x',
+        self.train_eqns = [
+                     'a*x','b*x','c*x','d*x',
                      'x+a','x+b','x+c','x+d',
-                     'a*x+b','b*x+a','a*x+a','b*x+b', 'c*x+d', 'd*x+c',
-                    #  'a/x+b','b/x+a','a/x+a','b/x+b',
+                     'a*x+b','b*x+a','c*x+d', 'd*x+c',
+                     'a/x+b','b/x+a','c/x+d','d/x+c',
                      'c*(a*x+b)+d', 'd*(a*x+b)+c', 'c*(b*x+a)+d', 'd*(b*x+a)+c'
                      ]
+        # self.train_eqns = ['a/x+b']
         self.train_eqns = [sympify(m) for m in self.train_eqns]
         self.solve_counts = {eqn:0 for eqn in self.train_eqns}
         self.visit_counts = {eqn:0 for eqn in self.train_eqns}
@@ -123,9 +125,10 @@ class multiEqnEasy(BaseEnv):
 
         a, b, c, d, x = symbols('a b c d x')
         operations = [add, sub, mul, truediv]
-        terms = [a, b, c, d]
+        terms = [a, b, c, d, x]
         self.actions_fixed = []
         self.actions = list(product(operations, terms))
+        self.actions.append((expand,None))
         self.action_mask = [True for i in self.actions]
         #print(f'actions = {self.actions}')
 
@@ -171,13 +174,13 @@ class multiEqnEasy(BaseEnv):
         verbose = True
         if verbose:
             #print(f'\nStep: {self.current_steps}: Main eqn = {self.main_eqn} \n {lhs_new} = {rhs_new} ')
-            print(f'Main eqn = {self.main_eqn} | {lhs_new} = {rhs_new} \n (Operation, term): {operation_names.get(operation, operation)}, {term} | reward = {reward:.2f}\n')
+            #print(f'Main eqn = {self.main_eqn} | {lhs_new} = {rhs_new} \n (Operation, term): {operation_names.get(operation, operation)}, {term} | reward = {reward:.2f}\n')
 
             if is_solved:
                 self.solve_counts[self.main_eqn] += 1
                 print(Fore.GREEN + f'\nSOLVED: {self.lhs} = {self.rhs}\n' + Style.RESET_ALL)
                 for eqn, count in self.solve_counts.items():
-                    print(f'{eqn}: visit = {self.visit_counts[eqn]}, solved: {count}')
+                    print(Fore.GREEN + f'{eqn}: visit = {self.visit_counts[eqn]}, solved: {count}')
 
         lightzero_obs_dict = {
             'observation': np.array(obs_new, dtype=np.float32),
