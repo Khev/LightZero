@@ -38,15 +38,15 @@ multi_eqn_muzero_config = dict(
             observation_shape=41,  
             action_space_size=21, 
             model_type='mlp',
-            hidden_size_list=[512,512,512],
+            hidden_size_list=[1024,1024,1024],
             latent_state_dim=1024,
             self_supervised_learning_loss=True,
             discrete_action_encoding_type='not_one_hot',
             res_connection_in_dynamics=True,
             norm_type='LN',
         ),
-        root_dirichlet_alpha=0.3,       # e.g., 0.3
-        root_exploration_fraction=0.25, # e.g., 0.25
+        root_dirichlet_alpha=1.0,       # e.g., 0.3
+        root_exploration_fraction=0.5, # e.g., 0.25
         td_steps=5,
         num_unroll_steps=5,
         model_path=None,
@@ -66,6 +66,8 @@ multi_eqn_muzero_config = dict(
         n_episode=n_episode,
         eval_freq=int(1e3),
         replay_buffer_size=int(1e5),
+        policy_entropy_weight=0.1,          # ADDED for entropy-based exploration
+        fixed_temperature_value=1.00,  # you can increase this for more exploration
         collector_env_num=collector_env_num,
         evaluator_env_num=evaluator_env_num,
     ),

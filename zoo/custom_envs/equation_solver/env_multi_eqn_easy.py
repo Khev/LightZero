@@ -152,6 +152,9 @@ class multiEqnEasy(BaseEnv):
         reward = self.find_reward(lhs_old, rhs_old, lhs_new, rhs_new, is_valid_eqn, is_solved)
         self.episode_return += reward
 
+        if reward == 0:
+            reward = -0.2
+
         # Termination conditions: solved, exceeded max steps, or invalid equation
         self.current_steps += 1
         too_many_steps = self.current_steps >= self.max_steps
